@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杠杆平衡条件探究实验</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="max-w-6xl mx-auto p-5">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">杠杆平衡条件探究实验</h1>
+        
+        <!-- 实验区域 -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <!-- 杠杆可视化模型 -->
+            <div class="relative w-full h-64 border-b-2 border-gray-700 mb-6" id="leverContainer">
+                <!-- 支点 -->
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-16 bg-gray-600 rounded-md z-10"></div>
+                <!-- 杠杆 -->
+                <div class="absolute top-1/2 left-0 w-full h-2 bg-blue-600 rounded-md origin-center transition-transform duration-500" id="lever"></div>
+                <!-- 左侧钩码（动力侧） -->
+                <div class="absolute top-[calc(50%+10px)] left-1/2 -translate-x-full flex flex-col items-center" id="leftWeights">
+                    <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white font-bold" id="leftWeight1">1N</div>
+                </div>
+                <!-- 右侧钩码（阻力侧） -->
+                <div class="absolute top-[calc(50%+10px)] left-1/2 flex flex-col items-center" id="rightWeights">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold" id="rightWeight1">1.5N</div>
+                </div>
+            </div>
+
+            <!-- 参数调节控件 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 动力侧调节 -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">动力侧（左侧）</h3>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">动力（F₁）</label>
+                        <input type="number" min="0.5" max="5" step="0.5" value="1" class="w-full p-2 border border-gray-300 rounded" id="force1">
+                        <span class="text-sm text-gray-500">单位：N</span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">动力臂（L₁）</label>
+                        <input type="number" min="1" max="10" step="1" value="3" class="w-full p-2 border border-gray-300 rounded" id="arm1">
+                        <span class="text-sm text-gray-500">单位：cm（杠杆每格1cm）</span>
+                    </div>
+                </div>
+
+                <!-- 阻力侧调节 -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">阻力侧（右侧）</h3>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">阻力（F₂）</label>
+                        <input type="number" min="0.5" max="5" step="0.5" value="1.5" class="w-full p-2 border border-gray-300 rounded" id="force2">
+                        <span class="text-sm text-gray-500">单位：N</span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">阻力臂（L₂）</label>
+                        <input type="number" min="1" max="10" step="1" value="2" class="w-full p-2 border border-gray-300 rounded" id="arm2">
+                        <span class="text-sm text-gray-500">单位：cm（杠杆每格1cm）</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex justify-center gap-4 mt-6">
+                <button id="resetBtn" class="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700 transition">重置实验</button>
+                <button id="testBtn" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">验证平衡</button>
+                <button id="recordBtn" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition">记录数据</button>
+            </div>
+
+            <!-- 平衡结果提示 -->
+            <div class="text-center mt-4 text-xl font-medium" id="result"></div>
+        </div>
+
+        <!-- 数据记录区域 -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">实验数据记录表</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2 text-center">实验次数</th>
+                            <th class="border border-gray-300 p-2 text-center">动力F₁（N）</th>
+                            <th class="border border-gray-300 p-2 text-center">动力臂L₁（cm）</th>
+                            <th class="border border-gray-300 p-2 text-center">F₁×L₁（N·cm）</th>
+                            <th class="border border-gray-300 p-2 text-center">阻力F₂（N）</th>
+                            <th class="border border-gray-300 p-2 text-center">阻力臂L₂（cm）</th>
+                            <th class="border border-gray-300 p-2 text-center">F₂×L₂（N·cm）</th>
+                            <th class="border border-gray-300 p-2 text-center">平衡状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable">
+                        <!-- 数据行将通过JS动态添加 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const lever = document.getElementById('lever');
+        const leftWeights = document.getElementById('leftWeights');
+        const rightWeights = document.getElementById('rightWeights');
+        const force1Input = document.getElementById('force1');
+        const arm1Input = document.getElementById('arm1');
+        const force2Input = document.getElementById('force2');
+        const arm2Input = document.getElementById('arm2');
+        const resetBtn = document.getElementById('resetBtn');
+        const testBtn = document.getElementById('testBtn');
+        const recordBtn = document.getElementById('recordBtn');
+        const resultDiv = document.getElementById('result');
+        const dataTable = document.getElementById('dataTable');
+
+        // 初始参数
+        let experimentCount = 0;
+
+        // 重置实验
+        resetBtn.addEventListener('click', () => {
+            force1Input.value = 1;
+            arm1Input.value = 3;
+            force2Input.value = 1.5;
+            arm2Input.value = 2;
+            lever.style.transform = 'rotate(0deg)';
+            resultDiv.textContent = '';
+            updateWeights();
+        });
+
+        // 验证平衡
+        testBtn.addEventListener('click', () => {
+            const F1 = parseFloat(force1Input.value);
+            const L1 = parseFloat(arm1Input.value);
+            const F2 = parseFloat(force2Input.value);
+            const L2 = parseFloat(arm2Input.value);
+
+            // 计算力矩
+            const moment1 = F1 * L1;
+            const moment2 = F2 * L2;
+
+            // 模拟杠杆转动
+            if (Math.abs(moment1 - moment2) < 0.1) {
+                lever.style.transform = 'rotate(0deg)';
+                resultDiv.textContent = '✅ 杠杆平衡！F₁×L₁ = F₂×L₂';
+                resultDiv.className = 'text-center mt-4 text-xl font-medium text-green-600';
+            } else if (moment1 > moment2) {
+                lever.style.transform = 'rotate(-5deg)';
+                resultDiv.textContent = '❌ 杠杆左倾！F₁×L₁ > F₂×L₂';
+                resultDiv.className = 'text-center mt-4 text-xl font-medium text-red-600';
+            } else {
+                lever.style.transform = 'rotate(5deg)';
+                resultDiv.textContent = '❌ 杠杆右倾！F₁×L₁ < F₂×L₂';
+                resultDiv.className = 'text-center mt-4 text-xl font-medium text-red-600';
+            }
+
+            // 更新钩码显示
+            updateWeights();
+        });
+
+        // 记录数据
+        recordBtn.addEventListener('click', () => {
+            const F1 = parseFloat(force1Input.value);
+            const L1 = parseFloat(arm1Input.value);
+            const F2 = parseFloat(force2Input.value);
+            const L2 = parseFloat(arm2Input.value);
+            const moment1 = F1 * L1;
+            const moment2 = F2 * L2;
+            const isBalanced = Math.abs(moment1 - moment2) < 0.1 ? '平衡' : '不平衡';
+
+            // 添加数据行
+            experimentCount++;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="border border-gray-300 p-2 text-center">${experimentCount}</td>
+                <td class="border border-gray-300 p-2 text-center">${F1}</td>
+                <td class="border border-gray-300 p-2 text-center">${L1}</td>
+                <td class="border border-gray-300 p-2 text-center">${moment1.toFixed(1)}</td>
+                <td class="border border-gray-300 p-2 text-center">${F2}</td>
+                <td class="border border-gray-300 p-2 text-center">${L2}</td>
+                <td class="border border-gray-300 p-2 text-center">${moment2.toFixed(1)}</td>
+                <td class="border border-gray-300 p-2 text-center ${isBalanced === '平衡' ? 'text-green-600' : 'text-red-600'}">${isBalanced}</td>
+            `;
+            dataTable.appendChild(row);
+        });
+
+        // 更新钩码显示（根据力的大小调整钩码数量）
+        function updateWeights() {
+            const F1 = parseFloat(force1Input.value);
+            const F2 = parseFloat(force2Input.value);
+            const L1 = parseFloat(arm1Input.value);
+            const L2 = parseFloat(arm2Input.value);
+
+            // 调整钩码位置（根据力臂长度）
+            leftWeights.style.left = `calc(50% - ${L1 * 20}px)`; // 1cm对应20px
+            rightWeights.style.left = `calc(50% + ${L2 * 20}px)`;
+
+            // 调整钩码数量（每0.5N对应1个钩码）
+            const leftWeightCount = F1 / 0.5;
+            const rightWeightCount = F2 / 0.5;
+
+            // 清空现有钩码
+            leftWeights.innerHTML = '';
+            rightWeights.innerHTML = '';
+
+            // 添加左侧钩码
+            for (let i = 0; i < leftWeightCount; i++) {
+                const weight = document.createElement('div');
+                weight.className = 'w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white font-bold mb-1';
+                weight.textContent = '0.5N';
+                leftWeights.appendChild(weight);
+            }
+
+            // 添加右侧钩码
+            for (let i = 0; i < rightWeightCount; i++) {
+                const weight = document.createElement('div');
+                weight.className = 'w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold mb-1';
+                weight.textContent = '0.5N';
+                rightWeights.appendChild(weight);
+            }
+        }
+
+        // 初始化
+        updateWeights();
+    </script>
+</body>
+</html>

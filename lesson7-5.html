@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7.5 同一直线上二力的合成 - 北师大版物理八年级下册</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f8ff;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+        nav {
+            background-color: #333;
+            padding: 10px 0;
+            margin: 20px 0;
+            white-space: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        nav ul li {
+            display: inline;
+            margin: 0 10px;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            transition: background-color 0.3s ease;
+        }
+        nav ul li a:hover {
+            background-color: #555;
+        }
+        .lesson-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .lesson-content h2 {
+            color: #4CAF50;
+            margin-top: 0;
+        }
+        .lesson-content h3 {
+            color: #333;
+            margin-top: 25px;
+        }
+        .lesson-content p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .lesson-content ul, .lesson-content ol {
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+        .lesson-content li {
+            margin-bottom: 8px;
+        }
+        .back-home {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+        .back-home:hover {
+            background-color: #45a049;
+        }
+        /* 卡片容器样式 */
+        .resource-cards {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            gap: 20px;
+        }
+        /* 单个卡片样式 */
+        .resource-card {
+            flex: 1;
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .resource-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+        .resource-card h3 {
+            color: #4CAF50;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        .resource-card p {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 15px;
+        }
+        .resource-card a {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+        .resource-card a:hover {
+            background-color: #45a049;
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 50px;
+        }
+        
+        /* 弹窗遮罩层样式 */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* 弹窗容器样式 */
+        .popup-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 弹窗头部样式 */
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .popup-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        
+        /* 关闭按钮样式 */
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+        
+        .close-btn:hover {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        /* 弹窗内容样式 */
+        .popup-content {
+            padding: 20px;
+            overflow: hidden;
+            flex: 1;
+        }
+        
+        /* 弹窗底部样式 */
+        .popup-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: center;
+        }
+        
+        /* 下载按钮样式 */
+        .download-button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .download-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>7.5 同一直线上二力的合成</h1>
+            <p>北师大版物理八年级下册</p>
+        </header>
+        
+        <nav>
+            <ul>
+                <li><a href="index.html">首页</a></li>
+                <li><a href="lesson7-1.html">7.1 力</a></li>
+                <li><a href="lesson7-2.html">7.2 力的测量</a></li>
+                <li><a href="lesson7-3.html">7.3 弹力</a></li>
+                <li><a href="lesson7-4.html">7.4 重力</a></li>
+                <li><a href="lesson7-5.html">7.5 二力合成</a></li>
+                <li><a href="lesson7-6.html">7.6 二力平衡</a></li>
+                <li><a href="lesson7-7.html">7.7 摩擦力</a></li>
+                <li><a href="lesson7-8.html">7.8 牛顿第一定律</a></li>
+                <li><a href="lesson7-9.html">7.9 杠杆原理</a></li>
+                <li><a href="review.html">单元复习</a></li>
+
+            </ul>
+        </nav>
+        
+        <div class="lesson-content">
+            <h2>7.5 同一直线上二力的合成</h2>
+            <p>了解力的合成概念，掌握同一直线上二力合成的方法。</p>
+        </div>
+        
+        <div class="resource-cards">
+            <div class="resource-card">
+                <h3>教学设计</h3>
+                <img src="/img/lesson7-5-1_01.png" alt="教学设计" style="width: 100%; border-radius: 4px; margin-bottom: 15px;">
+                <a href="/documents/lesson7-5-1.docx" download>点击下载</a>
+            </div>
+            <div class="resource-card">
+                <h3>教学课件</h3>
+                <img src="/img/lesson7-5-2.png" alt="教学课件" style="width: 100%; border-radius: 4px; margin-bottom: 15px;">
+                <a href="/documents/lesson7-5-2.pptx" download>点击下载</a>
+            </div>
+
+        </div>
+        
+        <a href="index.html" class="back-home">返回首页</a>
+        
+        <footer>
+            <p>© 2024 北师大版物理八年级下册教学资源网站</p>
+        </footer>
+    </div>
+
+    <!-- 移除了文档预览弹窗功能 -->
+</body>
+</html>

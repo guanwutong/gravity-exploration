@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>弹力小球游戏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        danger: '#EF4444',
+                        dark: '#1F2937'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .game-container {
+                position: relative;
+                overflow: hidden;
+                touch-action: none;
+            }
+            .ball {
+                position: absolute;
+                cursor: grab;
+                user-select: none;
+                transition: transform 0.1s ease, filter 0.1s ease;
+                touch-action: none;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .ball:active {
+                cursor: grabbing;
+                transform: scale(1.15);
+                filter: brightness(1.2);
+            }
+            .target {
+                position: absolute;
+                transition: transform 0.3s ease, opacity 0.3s ease;
+            }
+            .trajectory {
+                position: absolute;
+                pointer-events: none;
+                z-index: 10;
+            }
+            .slingshot {
+                position: absolute;
+                height: 8px;
+                background-color: #8B4513;
+                transform-origin: left center;
+                z-index: 5;
+                box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            }
+            .score-board {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background-color: rgba(255, 255, 255, 0.8);
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-weight: bold;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .level-indicator {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                background-color: rgba(255, 255, 255, 0.8);
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-weight: bold;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .game-over {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: white;
+                border-radius: 12px;
+                padding: 24px;
+                text-align: center;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+                z-index: 100;
+                display: none;
+            }
+            .button {
+                transition: all 0.2s ease;
+            }
+            .button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+            .button:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .star {
+                display: inline-block;
+                color: #FFD700;
+                font-size: 24px;
+                margin: 0 2px;
+            }
+            .power-bar {
+                position: absolute;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 250px;
+                height: 15px;
+                background-color: rgba(255, 255, 255, 0.7);
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            }
+            .power-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #10B981, #F59E0B, #EF4444);
+                width: 0%;
+                transition: width 0.1s ease;
+                box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+    <div class="max-w-4xl w-full bg-white rounded-xl shadow-lg overflow-hidden">
+        <!-- 游戏标题 -->
+        <div class="bg-primary text-white p-4 text-center">
+            <h1 class="text-3xl font-bold">弹力小球大作战</h1>
+            <p class="text-sm opacity-80">拖动小球，发射并击中目标！</p>
+        </div>
+        
+        <!-- 游戏容器 -->
+        <div id="gameContainer" class="game-container w-full h-[500px] bg-cover bg-center" style="background-image: url('https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/1c76d5f449ff4d73a893ab7ab04aa28a~tplv-a9rns2rl98-image.image?rcl=202601081948422A707C75FC9074FDA64B&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1770464936&x-signature=7%2FmBzX3cR7Go4yXep1Qkr4z5PaY%3D')">
+            <!-- 弹弓 -->
+            <div id="slingshot" class="slingshot"></div>
+            
+            <!-- 小球 -->
+            <div id="ball" class="ball">
+                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/ea7f2e382b1647d7af3dd0b1890adb8f~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202601081948422A707C75FC9074FDA64B&rrcfp=f06b921b&x-expires=1770464935&x-signature=ow1PwKb8fhEd1IBPOw19ahLkqTs%3D" alt="小球" width="60" height="60">
+            </div>
+            
+            <!-- 目标 -->
+            <div id="target" class="target">
+                <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0359c959ff9442b6bdd65167faeece11~tplv-a9rns2rl98-image.image?rcl=202601081948422A707C75FC9074FDA64B&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1770464935&x-signature=dp%2BOiZ00WWPa2twAd0lmJUQEz58%3D" alt="目标" width="120" height="180">
+            </div>
+            
+            <!-- 轨迹线 -->
+            <canvas id="trajectory" class="trajectory"></canvas>
+            
+            <!-- 分数板 -->
+            <div class="score-board">
+                <span>得分: </span><span id="score">0</span>
+            </div>
+            
+            <!-- 关卡指示器 -->
+            <div class="level-indicator">
+                <span>关卡: </span><span id="level">1</span>
+            </div>
+            
+            <!-- 力度条 -->
+            <div class="power-bar">
+                <div id="powerFill" class="power-fill"></div>
+            </div>
+            
+            <!-- 游戏结束弹窗 -->
+            <div id="gameOver" class="game-over">
+                <h2 class="text-2xl font-bold mb-2">游戏结束</h2>
+                <p class="mb-4">你的最终得分: <span id="finalScore">0</span></p>
+                <div id="stars" class="mb-4">
+                    <!-- 星星评价将在这里动态生成 -->
+                </div>
+                <button id="restartBtn" class="button bg-primary text-white px-6 py-2 rounded-lg font-bold">
+                    重新开始
+                </button>
+            </div>
+        </div>
+        
+        <!-- 游戏说明 -->
+        <div class="p-4 bg-gray-50 text-sm text-gray-600">
+            <h3 class="font-bold mb-2">游戏说明:</h3>
+            <ul class="list-disc pl-5 space-y-1">
+                <li>拖动小球向后拉，释放后发射</li>
+                <li>击中目标获得分数</li>
+                <li>每关有3次机会，用完游戏结束</li>
+                <li>随着关卡提升，目标位置会变化</li>
+                <li>拖动距离越远，发射力度越大</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 游戏对象
+        const game = {
+            // 游戏状态
+            state: {
+                isDragging: false,
+                isShooting: false,
+                score: 0,
+                level: 1,
+                attempts: 3,
+                maxLevel: 5,
+                gameOver: false
+            },
+            
+            // 物理参数
+            physics: {
+                gravity: 0.5,
+                friction: 0.98,
+                bounce: 0.85,
+                maxDragDistance: 250,
+                powerMultiplier: 1.2
+            },
+            
+            // 元素引用
+            elements: {
+                container: null,
+                ball: null,
+                target: null,
+                trajectory: null,
+                slingshot: null,
+                powerFill: null,
+                gameOver: null,
+                scoreDisplay: null,
+                levelDisplay: null,
+                finalScoreDisplay: null,
+                starsDisplay: null,
+                restartBtn: null
+            },
+            
+            // 位置和速度
+            positions: {
+                ball: { x: 0, y: 0 },
+                target: { x: 0, y: 0 },
+                start: { x: 0, y: 0 },
+                current: { x: 0, y: 0 }
+            },
+            
+            velocities: {
+                ball: { x: 0, y: 0 }
+            },
+            
+            // 初始化游戏
+            init() {
+                // 获取元素引用
+                this.elements.container = document.getElementById('gameContainer');
+                this.elements.ball = document.getElementById('ball');
+                this.elements.target = document.getElementById('target');
+                this.elements.trajectory = document.getElementById('trajectory');
+                this.elements.slingshot = document.getElementById('slingshot');
+                this.elements.powerFill = document.getElementById('powerFill');
+                this.elements.gameOver = document.getElementById('gameOver');
+                this.elements.scoreDisplay = document.getElementById('score');
+                this.elements.levelDisplay = document.getElementById('level');
+                this.elements.finalScoreDisplay = document.getElementById('finalScore');
+                this.elements.starsDisplay = document.getElementById('stars');
+                this.elements.restartBtn = document.getElementById('restartBtn');
+                
+                // 设置轨迹画布尺寸
+                this.resizeTrajectory();
+                window.addEventListener('resize', () => this.resizeTrajectory());
+                
+                // 设置初始位置
+                this.resetPositions();
+                
+                // 添加事件监听器
+                this.addEventListeners();
+                
+                // 开始游戏循环
+                this.gameLoop();
+            },
+            
+            // 调整轨迹画布尺寸
+            resizeTrajectory() {
+                const rect = this.elements.container.getBoundingClientRect();
+                this.elements.trajectory.width = rect.width;
+                this.elements.trajectory.height = rect.height;
+            },
+            
+            // 设置初始位置
+            resetPositions() {
+                const containerRect = this.elements.container.getBoundingClientRect();
+                const ballRect = this.elements.ball.getBoundingClientRect();
+                const targetRect = this.elements.target.getBoundingClientRect();
+                
+                // 小球初始位置（左下角）
+                this.positions.ball.x = 50;
+                this.positions.ball.y = containerRect.height - ballRect.height - 20;
+                
+                // 目标位置（根据关卡调整）
+                const levelFactor = (this.state.level - 1) / (this.state.maxLevel - 1);
+                this.positions.target.x = containerRect.width * (0.6 + levelFactor * 0.2);
+                this.positions.target.y = containerRect.height * (0.3 + levelFactor * 0.2) - targetRect.height / 2;
+                
+                // 更新DOM位置
+                this.updateElementPositions();
+                
+                // 重置速度
+                this.velocities.ball.x = 0;
+                this.velocities.ball.y = 0;
+                
+                // 重置弹弓
+                this.updateSlingshot(0, 0);
+            },
+            
+            // 更新元素位置
+            updateElementPositions() {
+                this.elements.ball.style.left = `${this.positions.ball.x}px`;
+                this.elements.ball.style.top = `${this.positions.ball.y}px`;
+                
+                this.elements.target.style.left = `${this.positions.target.x}px`;
+                this.elements.target.style.top = `${this.positions.target.y}px`;
+            },
+            
+            // 添加事件监听器
+            addEventListeners() {
+                // 鼠标/触摸事件
+                const events = {
+                    start: ['mousedown', 'touchstart'],
+                    move: ['mousemove', 'touchmove'],
+                    end: ['mouseup', 'touchend', 'mouseleave']
+                };
+                
+                // 开始拖动
+                events.start.forEach(event => {
+                    this.elements.ball.addEventListener(event, (e) => {
+                        if (this.state.isShooting || this.state.gameOver) return;
+                        
+                        e.preventDefault();
+                        this.state.isDragging = true;
+                        
+                        const rect = this.elements.container.getBoundingClientRect();
+                        const clientX = e.clientX || e.touches[0].clientX;
+                        const clientY = e.clientY || e.touches[0].clientY;
+                        
+                        this.positions.start.x = clientX - rect.left;
+                        this.positions.start.y = clientY - rect.top;
+                    });
+                });
+                
+                // 拖动中
+                events.move.forEach(event => {
+                    document.addEventListener(event, (e) => {
+                        if (!this.state.isDragging || this.state.gameOver) return;
+                        
+                        e.preventDefault();
+                        
+                        const rect = this.elements.container.getBoundingClientRect();
+                        const clientX = e.clientX || e.touches[0].clientX;
+                        const clientY = e.clientY || e.touches[0].clientY;
+                        
+                        this.positions.current.x = clientX - rect.left;
+                        this.positions.current.y = clientY - rect.top;
+                        
+                        // 计算拖动距离和方向
+                        let deltaX = this.positions.current.x - this.positions.start.x;
+                        let deltaY = this.positions.current.y - this.positions.start.y;
+                        
+                        // 限制拖动范围，但允许在垂直方向上有更大的自由度
+                        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                        if (distance > this.physics.maxDragDistance) {
+                            const ratio = this.physics.maxDragDistance / distance;
+                            deltaX *= ratio;
+                            deltaY *= ratio;
+                        }
+                        
+                        // 为触控设备添加触觉反馈（如果支持）
+                        if ('vibrate' in navigator && distance % 30 < 5) {
+                            navigator.vibrate(10);
+                        }
+                        
+                        // 更新小球位置
+                        this.positions.ball.x = this.positions.start.x + deltaX;
+                        this.positions.ball.y = this.positions.start.y + deltaY;
+                        
+                        // 更新弹弓
+                        this.updateSlingshot(deltaX, deltaY);
+                        
+                        // 绘制轨迹
+                        this.drawTrajectory(deltaX, deltaY);
+                        
+                        // 更新力度条
+                        const powerPercent = (distance / this.physics.maxDragDistance) * 100;
+                        this.elements.powerFill.style.width = `${powerPercent}%`;
+                    });
+                });
+                
+                // 结束拖动（发射）
+                events.end.forEach(event => {
+                    document.addEventListener(event, () => {
+                        if (!this.state.isDragging || this.state.gameOver) return;
+                        
+                        this.state.isDragging = false;
+                        this.state.isShooting = true;
+                        
+                        // 计算发射速度
+                        const deltaX = this.positions.start.x - this.positions.ball.x;
+                        const deltaY = this.positions.start.y - this.positions.ball.y;
+                        
+                        this.velocities.ball.x = deltaX * this.physics.powerMultiplier / 10;
+                        this.velocities.ball.y = deltaY * this.physics.powerMultiplier / 10;
+                        
+                        // 清除轨迹
+                        this.clearTrajectory();
+                        
+                        // 重置力度条
+                        this.elements.powerFill.style.width = '0%';
+                    });
+                });
+                
+                // 重新开始按钮
+                this.elements.restartBtn.addEventListener('click', () => {
+                    this.restartGame();
+                });
+            },
+            
+            // 更新弹弓
+            updateSlingshot(deltaX, deltaY) {
+                const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+                
+                this.elements.slingshot.style.width = `${length}px`;
+                this.elements.slingshot.style.left = `${this.positions.start.x}px`;
+                this.elements.slingshot.style.top = `${this.positions.start.y + 30}px`;
+                this.elements.slingshot.style.transform = `rotate(${angle}deg)`;
+            },
+            
+            // 绘制轨迹
+            drawTrajectory(deltaX, deltaY) {
+                const canvas = this.elements.trajectory;
+                const ctx = canvas.getContext('2d');
+                
+                // 清除画布
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 设置轨迹样式
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([8, 4]);
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                ctx.shadowBlur = 5;
+                
+                // 计算初始速度
+                const vx = -deltaX * this.physics.powerMultiplier / 10;
+                const vy = -deltaY * this.physics.powerMultiplier / 10;
+                
+                // 绘制轨迹预测
+                ctx.beginPath();
+                ctx.moveTo(this.positions.ball.x + 30, this.positions.ball.y + 30);
+                
+                let x = this.positions.ball.x + 30;
+                let y = this.positions.ball.y + 30;
+                let vx_t = vx;
+                let vy_t = vy;
+                
+                // 模拟物理轨迹
+                for (let t = 0; t < 100; t++) {
+                    vy_t += this.physics.gravity;
+                    x += vx_t;
+                    y += vy_t;
+                    
+                    // 检查是否碰到边界
+                    if (x < 0 || x > canvas.width || y > canvas.height) {
+                        break;
+                    }
+                    
+                    ctx.lineTo(x, y);
+                }
+                
+                ctx.stroke();
+            },
+            
+            // 清除轨迹
+            clearTrajectory() {
+                const canvas = this.elements.trajectory;
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            },
+            
+            // 检查碰撞
+            checkCollision() {
+                const ballRect = this.elements.ball.getBoundingClientRect();
+                const targetRect = this.elements.target.getBoundingClientRect();
+                
+                return !(
+                    ballRect.right < targetRect.left ||
+                    ballRect.left > targetRect.right ||
+                    ballRect.bottom < targetRect.top ||
+                    ballRect.top > targetRect.bottom
+                );
+            },
+            
+            // 更新游戏状态
+            update() {
+                if (!this.state.isShooting || this.state.gameOver) return;
+                
+                const containerRect = this.elements.container.getBoundingClientRect();
+                const ballRect = this.elements.ball.getBoundingClientRect();
+                
+                // 应用重力
+                this.velocities.ball.y += this.physics.gravity;
+                
+                // 更新位置
+                this.positions.ball.x += this.velocities.ball.x;
+                this.positions.ball.y += this.velocities.ball.y;
+                
+                // 应用摩擦力
+                this.velocities.ball.x *= this.physics.friction;
+                this.velocities.ball.y *= this.physics.friction;
+                
+                // 边界碰撞检测
+                // 左右边界
+                if (this.positions.ball.x < 0) {
+                    this.positions.ball.x = 0;
+                    this.velocities.ball.x *= -this.physics.bounce;
+                } else if (this.positions.ball.x > containerRect.width - ballRect.width) {
+                    this.positions.ball.x = containerRect.width - ballRect.width;
+                    this.velocities.ball.x *= -this.physics.bounce;
+                }
+                
+                // 上下边界
+                if (this.positions.ball.y < 0) {
+                    this.positions.ball.y = 0;
+                    this.velocities.ball.y *= -this.physics.bounce;
+                } else if (this.positions.ball.y > containerRect.height - ballRect.height) {
+                    this.positions.ball.y = containerRect.height - ballRect.height;
+                    this.velocities.ball.y *= -this.physics.bounce;
+                    
+                    // 检查是否停止移动
+                    if (Math.abs(this.velocities.ball.x) < 0.5 && Math.abs(this.velocities.ball.y) < 0.5) {
+                        this.state.isShooting = false;
+                        this.state.attempts--;
+                        
+                        // 检查是否还有尝试次数
+                        if (this.state.attempts <= 0) {
+                            this.endGame();
+                        } else {
+                            // 重置小球位置
+                            setTimeout(() => {
+                                this.positions.ball.x = this.positions.start.x;
+                                this.positions.ball.y = this.positions.start.y;
+                                this.velocities.ball.x = 0;
+                                this.velocities.ball.y = 0;
+                            }, 1000);
+                        }
+                    }
+                }
+                
+                // 检查与目标的碰撞
+                if (this.checkCollision()) {
+                    this.hitTarget();
+                }
+                
+                // 更新DOM位置
+                this.updateElementPositions();
+            },
+            
+            // 击中目标
+            hitTarget() {
+                // 计算得分（基于速度和剩余尝试次数）
+                const speedBonus = Math.sqrt(
+                    this.velocities.ball.x * this.velocities.ball.x + 
+                    this.velocities.ball.y * this.velocities.ball.y
+                ) * 2;
+                const attemptsBonus = this.state.attempts * 50;
+                const levelBonus = this.state.level * 100;
+                
+                const pointsEarned = Math.round(100 + speedBonus + attemptsBonus + levelBonus);
+                
+                // 更新分数
+                this.state.score += pointsEarned;
+                this.elements.scoreDisplay.textContent = this.state.score;
+                
+                // 目标动画效果
+                this.elements.target.style.transform = 'scale(0.8)';
+                this.elements.target.style.opacity = '0.5';
+                
+                // 显示得分动画
+                this.showScoreAnimation(pointsEarned);
+                
+                // 重置状态
+                setTimeout(() => {
+                    this.state.isShooting = false;
+                    this.elements.target.style.transform = 'scale(1)';
+                    this.elements.target.style.opacity = '1';
+                    
+                    // 进入下一关
+                    this.nextLevel();
+                }, 1000);
+            },
+            
+            // 显示得分动画
+            showScoreAnimation(points) {
+                const scoreAnim = document.createElement('div');
+                scoreAnim.className = 'absolute text-2xl font-bold text-yellow-500';
+                scoreAnim.textContent = `+${points}`;
+                scoreAnim.style.left = `${this.positions.target.x + 60}px`;
+                scoreAnim.style.top = `${this.positions.target.y}px`;
+                scoreAnim.style.zIndex = '100';
+                scoreAnim.style.transition = 'all 1s ease-out';
+                
+                this.elements.container.appendChild(scoreAnim);
+                
+                // 动画效果
+                setTimeout(() => {
+                    scoreAnim.style.transform = 'translateY(-50px)';
+                    scoreAnim.style.opacity = '0';
+                }, 10);
+                
+                // 移除元素
+                setTimeout(() => {
+                    this.elements.container.removeChild(scoreAnim);
+                }, 1000);
+            },
+            
+            // 进入下一关
+            nextLevel() {
+                this.state.level++;
+                this.state.attempts = 3;
+                
+                // 检查是否通关
+                if (this.state.level > this.state.maxLevel) {
+                    this.endGame();
+                    return;
+                }
+                
+                // 更新关卡显示
+                this.elements.levelDisplay.textContent = this.state.level;
+                
+                // 重置位置
+                this.resetPositions();
+            },
+            
+            // 游戏结束
+            endGame() {
+                this.state.gameOver = true;
+                
+                // 显示最终得分
+                this.elements.finalScoreDisplay.textContent = this.state.score;
+                
+                // 计算星级评价
+                this.calculateStars();
+                
+                // 显示游戏结束弹窗
+                this.elements.gameOver.style.display = 'block';
+            },
+            
+            // 计算星级评价
+            calculateStars() {
+                this.elements.starsDisplay.innerHTML = '';
+                
+                // 根据得分计算星星数（示例算法）
+                const maxScore = this.state.maxLevel * 500; // 假设每关最高500分
+                const scoreRatio = this.state.score / maxScore;
+                
+                let stars = 0;
+                if (scoreRatio >= 0.8) stars = 3;
+                else if (scoreRatio >= 0.5) stars = 2;
+                else if (scoreRatio > 0) stars = 1;
+                
+                // 添加星星
+                for (let i = 0; i < 3; i++) {
+                    const star = document.createElement('span');
+                    star.className = 'star';
+                    star.innerHTML = i < stars ? '★' : '☆';
+                    this.elements.starsDisplay.appendChild(star);
+                }
+            },
+            
+            // 重新开始游戏
+            restartGame() {
+                // 重置游戏状态
+                this.state.score = 0;
+                this.state.level = 1;
+                this.state.attempts = 3;
+                this.state.gameOver = false;
+                this.state.isShooting = false;
+                
+                // 更新显示
+                this.elements.scoreDisplay.textContent = '0';
+                this.elements.levelDisplay.textContent = '1';
+                this.elements.gameOver.style.display = 'none';
+                
+                // 重置位置
+                this.resetPositions();
+            },
+            
+            // 游戏循环
+            gameLoop() {
+                this.update();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        };
+        
+        // 初始化游戏
+        window.addEventListener('DOMContentLoaded', () => {
+            game.init();
+        });
+    </script>
+</body>
+</html>
